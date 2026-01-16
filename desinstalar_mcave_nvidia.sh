@@ -5,23 +5,20 @@
 # ==============================================================================
 
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-echo "ATENÇÃO: ESTE SCRIPT IRÁ REMOVER TODO O AMBIENTE DE SIMULAÇÃO."
-echo "Isso inclui: Elmer, OpenFOAM, ParaView, Intel MKL e dependências."
+echo "ATENÇÃO: ESTE SCRIPT IRÁ DESTRUIR TODO O AMBIENTE DE SIMULAÇÃO."
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "Serão removidos: ElmerFEM, ParaView, OpenFOAM, MKL e configurações."
 echo ""
-echo "Tem certeza que deseja continuar? (Digite s e dê Enter)"
-
-# AQUI ESTÁ A CORREÇÃO:
-# O comando '< /dev/tty' força a leitura do teclado mesmo se rodar via pipe
-read confirm < /dev/tty
-
-if [[ "$confirm" != "s" && "$confirm" != "S" ]]; then
-    echo "Operação cancelada pelo usuário."
-    exit 1
-fi
-
+echo ">>> PARA CANCELAR, PRESSIONE: Ctrl + C <<<"
 echo ""
-echo ">>> INICIANDO REMOÇÃO..."
+
+# Contagem regressiva de 10 segundos (Funciona mesmo via wget | bash)
+for i in {5..1}; do
+    echo -ne "A limpeza começará em $i segundos... \r"
+    sleep 1
+done
+
+echo -e "\n\n>>> INICIANDO REMOÇÃO AGORA..."
 
 # ==============================================================================
 # 1. REMOVENDO ELMERFEM
