@@ -18,7 +18,7 @@ Abra seu terminal no Ubuntu 22.04 e rode o comando abaixo (não precisa de sudo 
 wget -O- tinyurl.com/mcave-install | tr -d '\r' | bash
 ```
 
-## Como Desinstalar
+## ❌ Como Desinstalar
 
 ```bash
 # Desinstalação completa:
