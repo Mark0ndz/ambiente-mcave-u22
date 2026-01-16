@@ -16,4 +16,4 @@ Abra seu terminal no Ubuntu 22.04 e rode o comando abaixo (não precisa de sudo 
 
 ```bash
 # Instalação rápida:
-wget -qO- tinyurl.com/mcave-install | bash
+wget -qO- tinyurl.com/mcave-install | tr -d '\r' | bash
