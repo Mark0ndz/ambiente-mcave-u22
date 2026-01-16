@@ -3,24 +3,20 @@
 # ==============================================================================
 # SCRIPT DE DESINSTALAÇÃO: LIMPEZA TOTAL DO AMBIENTE MCAVE
 # ==============================================================================
-# O QUE ESTE SCRIPT FAZ:
-# 1. Remove ElmerFEM (Fontes e Instalação).
-# 2. Remove ParaView 6 (/opt/paraview6).
-# 3. Remove OpenFOAM 10 e seus repositórios.
-# 4. Remove Intel OneAPI MKL e seus repositórios.
-# 5. Remove bibliotecas de dependência instaladas (MUMPS, Hypre, etc).
-# 6. Limpa as configurações adicionadas ao .bashrc.
-# ==============================================================================
 
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo "ATENÇÃO: ESTE SCRIPT IRÁ REMOVER TODO O AMBIENTE DE SIMULAÇÃO."
 echo "Isso inclui: Elmer, OpenFOAM, ParaView, Intel MKL e dependências."
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo ""
-read -p "Tem certeza que deseja continuar? (s/N): " confirm
+echo "Tem certeza que deseja continuar? (Digite s e dê Enter)"
+
+# AQUI ESTÁ A CORREÇÃO:
+# O comando '< /dev/tty' força a leitura do teclado mesmo se rodar via pipe
+read confirm < /dev/tty
 
 if [[ "$confirm" != "s" && "$confirm" != "S" ]]; then
-    echo "Operação cancelada."
+    echo "Operação cancelada pelo usuário."
     exit 1
 fi
 
@@ -33,7 +29,6 @@ echo ">>> INICIANDO REMOÇÃO..."
 echo "[1/6] Removendo ElmerFEM..."
 cd $HOME
 rm -rf elmer 2>/dev/null
-# Remove binários do sistema se houver
 sudo rm -f /usr/local/bin/Elmer* /usr/local/bin/elmer*
 sudo rm -rf /usr/local/share/ElmerGUI /usr/local/share/elmerfem
 sudo rm -rf /usr/local/lib/elmerfem /usr/local/lib/libelmer*
@@ -49,7 +44,6 @@ sudo rm -rf /opt/paraview6
 # ==============================================================================
 echo "[3/6] Removendo OpenFOAM 10..."
 sudo apt purge -y openfoam10
-# Remove a chave e o repositório
 sudo rm -f /etc/apt/trusted.gpg.d/openfoam.asc
 sudo add-apt-repository --remove -y http://dl.openfoam.org/ubuntu 2>/dev/null
 
@@ -59,15 +53,13 @@ sudo add-apt-repository --remove -y http://dl.openfoam.org/ubuntu 2>/dev/null
 echo "[4/6] Removendo Intel OneAPI MKL..."
 sudo apt purge -y intel-basekit intel-mkl*
 sudo rm -rf /opt/intel
-# Remove repositório e chaves
 sudo rm -f /etc/apt/sources.list.d/oneAPI.list
 sudo rm -f /usr/share/keyrings/oneapi-archive-keyring.gpg
 
 # ==============================================================================
-# 5. REMOVENDO DEPENDÊNCIAS DE COMPILAÇÃO
+# 5. REMOVENDO DEPENDÊNCIAS
 # ==============================================================================
 echo "[5/6] Limpando bibliotecas e dependências..."
-# Remove bibliotecas matemáticas e de MPI instaladas pelo script
 sudo apt purge -y \
   libopenmpi-dev openmpi-bin libopenmpi3 \
   libblas-dev liblapack-dev \
@@ -80,7 +72,6 @@ sudo apt purge -y \
   gmsh \
   elmerfem-csc elmerfem-gui elmerfem-common || true
 
-# Limpeza automática de pacotes órfãos
 sudo apt autoremove -y
 sudo apt clean
 
@@ -88,18 +79,10 @@ sudo apt clean
 # 6. LIMPANDO .BASHRC
 # ==============================================================================
 echo "[6/6] Restaurando .bashrc..."
-
-# Faz um backup antes de mexer
 cp ~/.bashrc ~/.bashrc.backup.clean.$(date +%F_%H-%M)
-
-# Remove o bloco de configuração MCAVE
 sed -i '/# --- MCAVE CONFIG START ---/,/# --- MCAVE CONFIG END ---/d' ~/.bashrc
 
 echo ""
 echo "================================================================="
 echo "LIMPEZA CONCLUÍDA!"
-echo "================================================================="
-echo "O sistema foi restaurado (Softwares de simulação removidos)."
-echo "Nota: Configurações de interface (Dark Mode) e Teclado foram mantidas."
-echo "Reinicie o terminal para aplicar a limpeza do PATH."
 echo "================================================================="
