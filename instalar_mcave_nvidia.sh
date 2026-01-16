@@ -54,7 +54,6 @@ sudo dpkg --configure -a
 sudo apt update
 
 # 2.2 Interface e Editor (Dark Mode)
-# (|| true evita erro se rodar via SSH sem interface gráfica)
 echo ">>> Configurando Tema Escuro (Gedit/Sistema)..."
 gsettings set org.gnome.gedit.preferences.editor scheme 'oblivion' 2>/dev/null || true
 gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark' 2>/dev/null || true
@@ -93,6 +92,74 @@ else
 fi
 
 # ==============================================================================
+# ETAPA 3.5: CONFIGURAÇÃO DO .BASHRC E CARREGAMENTO DA MKL
+# (Movido para cá para garantir que o Elmer compile corretamente)
+# ==============================================================================
+echo ""
+echo "[3.5/6] CONFIGURANDO VARIÁVEIS DE AMBIENTE (MKL)..."
+
+# Backup do bashrc
+cp ~/.bashrc ~/.bashrc.backup.$(date +%F_%H-%M)
+# Limpa configs antigas do MCAVE
+sed -i '/# --- MCAVE CONFIG START ---/,/# --- MCAVE CONFIG END ---/d' ~/.bashrc
+
+# Escreve o novo bloco no .bashrc
+cat << 'EOF' >> ~/.bashrc
+
+# --- MCAVE CONFIG START ---
+
+# 1. INTEL MKL
+LATEST_MKL=$(ls -d /opt/intel/oneapi/mkl/20* 2>/dev/null | sort -V | tail -n1)
+if [ -n "$LATEST_MKL" ] && [ -f "$LATEST_MKL/env/vars.sh" ]; then
+    source "$LATEST_MKL/env/vars.sh" > /dev/null 2>&1
+fi
+
+# 2. ELMERFEM
+export ELMER_HOME=$HOME/elmer/install
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ELMER_HOME/lib
+export PATH=$PATH:$ELMER_HOME/bin
+alias elmer='ElmerGUI'
+
+# 3. OPENFOAM
+[ -f /opt/openfoam10/etc/bashrc ] && source /opt/openfoam10/etc/bashrc
+
+# 4. TOOLS
+alias mesh='gmsh'
+alias refresh='source ~/.bashrc'
+
+# 5. PARAVIEW 6 (Standard)
+export PARAVIEW_HOME=/opt/paraview6
+export PATH=$PARAVIEW_HOME/bin:$PATH
+unalias paraview 2>/dev/null
+unalias paraFoam 2>/dev/null
+
+paraview() {
+    # Comando padrão sem flags da NVIDIA
+    env -u LD_LIBRARY_PATH -u PYTHONPATH -u QT_PLUGIN_PATH \
+    LC_ALL=C.UTF-8 \
+    /opt/paraview6/bin/paraview "$@" &
+}
+
+paraFoam() {
+    caseName=${PWD##*/}
+    [ ! -f "$caseName.foam" ] && touch "$caseName.foam"
+    paraview "$caseName.foam"
+}
+# --- MCAVE CONFIG END ---
+EOF
+
+# --- CRUCIAL: CARREGA A MKL PARA A SESSÃO ATUAL DO SCRIPT ---
+# Isso permite que a Etapa 4 (Elmer) encontre as bibliotecas
+echo ">>> Carregando MKL na memória para a compilação..."
+LATEST_MKL=$(ls -d /opt/intel/oneapi/mkl/20* 2>/dev/null | sort -V | tail -n1)
+if [ -n "$LATEST_MKL" ]; then
+    source "$LATEST_MKL/env/vars.sh"
+    echo ">>> MKL Carregada: $LATEST_MKL"
+else
+    echo ">>> AVISO: MKL não encontrada. A compilação do Elmer pode falhar."
+fi
+
+# ==============================================================================
 # ETAPA 4: ELMERFEM (COMPILAÇÃO)
 # ==============================================================================
 echo ""
@@ -120,6 +187,7 @@ else
 fi
 cd build
 
+# Nota: MKL já está carregada pelo passo anterior
 cmake \
   -DWITH_ELMERGUI:BOOL=TRUE \
   -DWITH_LUA=TRUE \
@@ -152,7 +220,6 @@ sudo apt update
 sudo apt -y install openfoam10 gmsh
 
 # ParaView (Seu Link do GitHub)
-# ATENÇÃO: Se necessário, atualize este link para sua Release do GitHub
 PV_URL="https://github.com/Mark0ndz/ambiente-mcave-u22/releases/download/v1.0/ParaView-6.0.1-MPI-Linux-Python3.10-x86_64.tar.gz"
 PV_FILE="ParaView-6.0.1.tar.gz"
 
@@ -166,58 +233,8 @@ if [ ! -d "/opt/paraview6" ]; then
 fi
 
 # ==============================================================================
-# ETAPA 6: CONFIGURAÇÃO .BASHRC
+# ETAPA 6: FINALIZAÇÃO
 # ==============================================================================
-echo ""
-echo "[6/6] FINALIZANDO CONFIGURAÇÃO DO AMBIENTE..."
-
-cp ~/.bashrc ~/.bashrc.backup.$(date +%F_%H-%M)
-sed -i '/# --- MCAVE CONFIG START ---/,/# --- MCAVE CONFIG END ---/d' ~/.bashrc
-
-cat << 'EOF' >> ~/.bashrc
-
-# --- MCAVE CONFIG START ---
-
-# 1. INTEL MKL
-LATEST_MKL=$(ls -d /opt/intel/oneapi/mkl/20* 2>/dev/null | sort -V | tail -n1)
-if [ -n "$LATEST_MKL" ] && [ -f "$LATEST_MKL/env/vars.sh" ]; then
-    source "$LATEST_MKL/env/vars.sh" > /dev/null 2>&1
-fi
-
-# 2. ELMERFEM
-export ELMER_HOME=$HOME/elmer/install
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ELMER_HOME/lib
-export PATH=$PATH:$ELMER_HOME/bin
-alias elmer='ElmerGUI'
-
-# 3. OPENFOAM
-[ -f /opt/openfoam10/etc/bashrc ] && source /opt/openfoam10/etc/bashrc
-
-# 4. TOOLS
-alias mesh='gmsh'
-alias refresh='source ~/.bashrc'
-
-# 5. PARAVIEW 6 (Standard)
-export PARAVIEW_HOME=/opt/paraview6
-export PATH=$PARAVIEW_HOME/bin:$PATH
-unalias paraview 2>/dev/null
-unalias paraFoam 2>/dev/null
-
-paraview() {
-    # Comando padrão sem flags da NVIDIA (Pode ser ajustado se instalar Drivers)
-    env -u LD_LIBRARY_PATH -u PYTHONPATH -u QT_PLUGIN_PATH \
-    LC_ALL=C.UTF-8 \
-    /opt/paraview6/bin/paraview "$@" &
-}
-
-paraFoam() {
-    caseName=${PWD##*/}
-    [ ! -f "$caseName.foam" ] && touch "$caseName.foam"
-    paraview "$caseName.foam"
-}
-# --- MCAVE CONFIG END ---
-EOF
-
 echo ""
 echo "================================================================="
 echo "INSTALAÇÃO DOS SOFTWARES CONCLUÍDA!"
@@ -227,8 +244,6 @@ echo "- Teclado: ABNT2"
 echo "- Tema: Dark Mode"
 echo "- Softwares: Elmer, OpenFOAM, ParaView 6, MKL, Gmsh"
 echo ""
-echo "Para instalar Drivers NVIDIA, consulte o guia separado."
+echo "AÇÃO NECESSÁRIA:"
 echo "Reinicie o terminal ou digite: source ~/.bashrc"
 echo "================================================================="
-
-
