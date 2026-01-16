@@ -87,8 +87,8 @@ sudo apt install -y build-essential git cmake gfortran wget curl \
     cpufrequtils sysfsutils gpg-agent software-properties-common tree
 
 # 2.3 Instalação do Driver
-echo ">>> Baixando e instalando Nvidia Driver 580 (Isso pode demorar)..."
-sudo apt install -y nvidia-driver-580 nvidia-utils-580 nvidia-settings
+# echo ">>> Baixando e instalando Nvidia Driver 580 (Isso pode demorar)..."
+# sudo apt install -y nvidia-driver-580 nvidia-utils-580 nvidia-settings
 
 # ==============================================================================
 # ETAPA 3: CONFIGURAÇÃO DE PERFORMANCE (SISTEMA)
@@ -311,3 +311,4 @@ echo "2. Ativar o DRM Modeset e Autostart de Performance."
 echo ""
 echo "Por favor, reinicie agora com: sudo reboot"
 echo "================================================================="
+
