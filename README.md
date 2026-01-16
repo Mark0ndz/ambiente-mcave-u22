@@ -1,9 +1,8 @@
-# Ambiente MCAVE (Ubuntu 22.04 + NVIDIA)
+# Ambiente MCAVE (Ubuntu 22.04)
 
 Script automatizado para configuração de estação de simulação CFD/FEA.
 
 ## O que este script instala:
-- **Drivers NVIDIA 580** (Com otimização de performance e correção de lag)
 - **Intel OneAPI MKL** (Bibliotecas matemáticas otimizadas)
 - **ElmerFEM** (Compilado do zero, linkado com MKL e MUMPS)
 - **OpenFOAM 10** (Nativo)
@@ -17,3 +16,11 @@ Abra seu terminal no Ubuntu 22.04 e rode o comando abaixo (não precisa de sudo 
 ```bash
 # Instalação rápida:
 wget -qO- tinyurl.com/mcave-install | tr -d '\r' | bash
+```
+
+## Como Desinstalar
+
+```bash
+# Desinstalação completa:
+wget -qO- tinyurl.com/mcave-uninstall | tr -d '\r' | bash
+```
