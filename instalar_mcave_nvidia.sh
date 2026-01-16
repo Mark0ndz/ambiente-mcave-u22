@@ -220,7 +220,7 @@ sudo apt update
 sudo apt -y install openfoam10 gmsh
 
 # ParaView (Seu Link do GitHub)
-PV_URL="https://github.com/Mark0ndz/ambiente-mcave-u22/releases/download/v1.0/ParaView-6.0.1-MPI-Linux-Python3.10-x86_64.tar.gz"
+PV_URL="https://github.com/Mark0ndz/ambiente-mcave-u22/releases/download/v1.0/ParaView-6.0.1-MPI-Linux-Python3.12-x86_64.tar.gz"
 PV_FILE="ParaView-6.0.1.tar.gz"
 
 if [ ! -d "/opt/paraview6" ]; then
@@ -247,3 +247,4 @@ echo ""
 echo "AÇÃO NECESSÁRIA:"
 echo "Reinicie o terminal ou digite: source ~/.bashrc"
 echo "================================================================="
+
