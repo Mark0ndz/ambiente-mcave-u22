@@ -1,58 +1,33 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT DE INSTALAÇÃO: AMBIENTE MCAVE + NVIDIA PERFORMANCE (UBUNTU 22.04)
+# SCRIPT DE INSTALAÇÃO: AMBIENTE MCAVE (GERAL) - UBUNTU 22.04
 # Autor: Adaptado para MCAVE
 # Data: Janeiro/2026
 # ==============================================================================
 
-set -e # Para o script se houver erro crítico
+set -e
 
-echo ">>> INICIANDO SETUP MCAVE (VERSÃO NVIDIA RTX 4060) <<<"
-
-# ==============================================================================
-# ETAPA 0: VALIDAÇÃO DE HARDWARE
-# ==============================================================================
-echo ""
-echo "[0/8] VERIFICANDO COMPATIBILIDADE DE HARDWARE..."
-
-# Verifica se existe uma controladora VGA ou 3D da NVIDIA
-if lspci | grep -i "NVIDIA" > /dev/null; then
-    echo "  -> GPU NVIDIA detectada."
-    
-    # Verifica especificamente se é uma série 4060 (ou ajustável para 40xx)
-    if lspci | grep -i "4060" > /dev/null; then
-        echo "  -> Modelo RTX 4060 confirmado. Prosseguindo..."
-    else
-        echo "  -> AVISO: GPU NVIDIA detectada, mas não parece ser uma RTX 4060."
-        echo "  -> O script continuará, mas verifique a compatibilidade do driver 580."
-        read -p "  Pressione ENTER para continuar ou Ctrl+C para cancelar."
-    fi
-else
-    echo "ERRO CRÍTICO: Nenhuma GPU NVIDIA detectada."
-    echo "Este script é exclusivo para sistemas com hardware NVIDIA."
-    exit 1
-fi
+echo ">>> INICIANDO SETUP MCAVE (VERSÃO GERAL) <<<"
+echo ">>> Este script instala os softwares de simulação (CPU Based)."
 
 # ==============================================================================
-# ETAPA 1: LIMPEZA COMPLETA (DRIVERS + ELMER)
+# ETAPA 1: LIMPEZA DE SOFTWARES (ELMER E DEPENDÊNCIAS)
 # ==============================================================================
 echo ""
-echo "-----------------------------------------------------------------"
-echo "[1/8] EXECUTANDO LIMPEZA PROFUNDA (DRIVERS E SOFTWARES)..."
-echo "-----------------------------------------------------------------"
-echo "ATENÇÃO: A tela pode piscar ou mudar a resolução durante este processo."
+echo "[1/6] EXECUTANDO LIMPEZA DE SOFTWARES..."
 
-# 1.1 Limpeza de Instalações MCAVE (Elmer, etc)
+# Limpeza de pastas locais
 cd $HOME
 rm -rf elmer 2>/dev/null
 rm -rf $HOME/elmer/install 2>/dev/null
+
+# Limpeza de binários
 sudo rm -f /usr/local/bin/Elmer* /usr/local/bin/elmer*
 sudo rm -rf /usr/local/share/ElmerGUI /usr/local/share/elmerfem
 sudo rm -rf /usr/local/lib/elmerfem /usr/local/lib/libelmer*
 
-# 1.2 Limpeza de Dependências (Protegendo MKL)
-echo ">>> Removendo bibliotecas conflitantes..."
+# Limpeza de bibliotecas conflitantes (Protegendo a MKL)
 sudo apt purge -y \
   libopenmpi-dev openmpi-bin libopenmpi3 \
   libblas-dev liblapack-dev \
@@ -64,91 +39,48 @@ sudo apt purge -y \
   libscotch-dev \
   elmerfem-csc elmerfem-gui elmerfem-common || true
 
-# 1.3 Limpeza de Drivers NVIDIA Antigos (Conforme solicitado)
-echo ">>> Purgando drivers NVIDIA antigos..."
-sudo apt-get purge 'nvidia.*' -y
-sudo apt-get autoremove -y
-sudo apt-get autoclean
+sudo apt autoremove -y
+sudo apt clean
 
 # ==============================================================================
-# ETAPA 2: INSTALAÇÃO DO DRIVER NVIDIA 580 E PREPARAÇÃO
+# ETAPA 2: PREPARAÇÃO DO SISTEMA, INTERFACE E PERFORMANCE
 # ==============================================================================
 echo ""
-echo "-----------------------------------------------------------------"
-echo "[2/8] INSTALANDO DRIVER NVIDIA 580 E FERRAMENTAS..."
-echo "-----------------------------------------------------------------"
+echo "[2/6] PREPARANDO SISTEMA (INTERFACE, TECLADO E UTILITÁRIOS)..."
 
-# 2.1 Repositórios e Update
-sudo add-apt-repository ppa:graphics-drivers/ppa -y
+# 2.1 Atualização e Correção
+echo ">>> Corrigindo pacotes e atualizando..."
+sudo dpkg --configure -a
 sudo apt update
 
-# 2.2 Utilitários Básicos (Incluindo 'tree')
+# 2.2 Interface e Editor (Dark Mode)
+# (|| true evita erro se rodar via SSH sem interface gráfica)
+echo ">>> Configurando Tema Escuro (Gedit/Sistema)..."
+gsettings set org.gnome.gedit.preferences.editor scheme 'oblivion' 2>/dev/null || true
+gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark' 2>/dev/null || true
+
+# 2.3 Layout de Teclado (ABNT2)
+echo ">>> Configurando Teclado ABNT2..."
+setxkbmap -model abnt2 -layout br 2>/dev/null || true
+gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'br')]" 2>/dev/null || true
+
+# 2.4 Instalação de Utilitários
+echo ">>> Instalando compiladores e ferramentas..."
 sudo apt install -y build-essential git cmake gfortran wget curl \
     cpufrequtils sysfsutils gpg-agent software-properties-common tree
 
-# 2.3 Instalação do Driver
-# echo ">>> Baixando e instalando Nvidia Driver 580 (Isso pode demorar)..."
-# sudo apt install -y nvidia-driver-580 nvidia-utils-580 nvidia-settings
-
-# ==============================================================================
-# ETAPA 3: CONFIGURAÇÃO DE PERFORMANCE (SISTEMA)
-# ==============================================================================
-echo ""
-echo "-----------------------------------------------------------------"
-echo "[3/8] APLICANDO TWEAKS DE PERFORMANCE (KERNEL/CPU)..."
-echo "-----------------------------------------------------------------"
-
-# 3.1 CPU Governor (Performance)
-echo ">>> Configurando CPU para Performance..."
+# 2.5 Configuração de CPU (Performance)
+echo ">>> Ajustando governador da CPU..."
 sudo cpufreq-set -r -g performance || true
 if ! grep -q "scaling_governor = performance" /etc/sysfs.conf; then
     echo "devices/system/cpu/cpu*/cpufreq/scaling_governor = performance" | sudo tee -a /etc/sysfs.conf
 fi
 
-# 3.2 NVIDIA Prime Select (Força o uso da GPU Discreta)
-echo ">>> Definindo NVIDIA como GPU primária..."
-sudo prime-select nvidia
-
-# 3.3 DRM Mode Setting (Para evitar tearing e melhorar sync)
-echo ">>> Ativando NVIDIA DRM Modeset..."
-echo "options nvidia-drm modeset=1" | sudo tee /etc/modprobe.d/nvidia-kms.conf
-sudo update-initramfs -u
-
 # ==============================================================================
-# ETAPA 4: PERSISTÊNCIA DAS CONFIGURAÇÕES VISUAIS (AUTOSTART)
+# ETAPA 3: INTEL ONEAPI MKL
 # ==============================================================================
 echo ""
-echo "-----------------------------------------------------------------"
-echo "[4/8] CRIANDO SCRIPTS DE INICIALIZAÇÃO E AUTOSTART..."
-echo "-----------------------------------------------------------------"
-
-# Configurações como 'nvidia-settings' precisam do X server rodando.
-# Criaremos um script que roda ao fazer login.
-
-mkdir -p ~/.config/autostart
-
-# Criação do arquivo .desktop com cuidado nas aspas e escapes
-cat <<EOF > ~/.config/autostart/nvidia-performance.desktop
-[Desktop Entry]
-Type=Application
-Exec=sh -c 'sleep 5 && nvidia-settings -a "[gpu:0]/GpuPowerMizerMode=1" && nvidia-settings -a "CurrentMetaMode=\$(nvidia-settings -q CurrentMetaMode -t | sed "s/\\}/, ForceFullCompositionPipeline=On\\}/g")"'
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name=NVIDIA Performance Mode
-Comment=Forca PowerMizer e FullCompositionPipeline no login
-EOF
-
-chmod +x ~/.config/autostart/nvidia-performance.desktop
-echo ">>> Autostart configurado. As correções de lag aplicarão após o login."
-
-# ==============================================================================
-# ETAPA 5: INTEL ONEAPI MKL
-# ==============================================================================
-echo ""
-echo "-----------------------------------------------------------------"
-echo "[5/8] INSTALANDO INTEL ONEAPI MKL..."
-echo "-----------------------------------------------------------------"
+echo "[3/6] INSTALANDO INTEL ONEAPI MKL..."
 
 if [ ! -d "/opt/intel/oneapi/mkl" ]; then
     wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
@@ -161,12 +93,10 @@ else
 fi
 
 # ==============================================================================
-# ETAPA 6: ELMERFEM (COMPILAÇÃO COM MKL)
+# ETAPA 4: ELMERFEM (COMPILAÇÃO)
 # ==============================================================================
 echo ""
-echo "-----------------------------------------------------------------"
-echo "[6/8] COMPILANDO ELMERFEM (LINKADO COM MKL)..."
-echo "-----------------------------------------------------------------"
+echo "[4/6] COMPILANDO ELMERFEM..."
 
 # Dependências
 sudo apt install -y \
@@ -206,12 +136,10 @@ cmake \
 make -j$(nproc) install
 
 # ==============================================================================
-# ETAPA 7: FERRAMENTAS E OPENFOAM
+# ETAPA 5: OPENFOAM, GMSH E PARAVIEW
 # ==============================================================================
 echo ""
-echo "-----------------------------------------------------------------"
-echo "[7/8] INSTALANDO OPENFOAM 10, GMSH E PARAVIEW..."
-echo "-----------------------------------------------------------------"
+echo "[5/6] INSTALANDO OPENFOAM 10, GMSH E PARAVIEW..."
 
 # OpenFOAM
 sudo sh -c "wget -O - https://dl.openfoam.org/gpg.key > /etc/apt/trusted.gpg.d/openfoam.asc"
@@ -219,25 +147,14 @@ sudo add-apt-repository -y http://dl.openfoam.org/ubuntu
 sudo apt update
 sudo apt -y install openfoam10 gmsh
 
-# ParaView (LINK DO GITHUB)
-# ATENÇÃO: Substitua SEU_USUARIO abaixo pelo seu username do GitHub se já criou a release
-PV_RELEASE_URL="https://github.com/Mark0ndz/ambiente-mcave-u22/releases/download/v1.0/ParaView-6.0.1-MPI-Linux-Python3.12-x86_64.tar.gz"
-# Fallback para o oficial caso o usuário não altere, para o script não quebrar
-OFFICIAL_URL="https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=6.0&type=binary&os=Linux&downloadFile=ParaView-6.0.1-MPI-Linux-Python3.10-x86_64.tar.gz"
-
-# Usa o link oficial se o do GitHub ainda estiver com "SEU_USUARIO"
-if [[ "$PV_RELEASE_URL" == *"SEU_USUARIO"* ]]; then
-    echo ">>> Aviso: Link do GitHub não configurado. Usando servidor oficial (Lento)..."
-    FINAL_URL="$OFFICIAL_URL"
-else
-    FINAL_URL="$PV_RELEASE_URL"
-fi
-
+# ParaView (Seu Link do GitHub)
+# ATENÇÃO: Se necessário, atualize este link para sua Release do GitHub
+PV_URL="https://github.com/Mark0ndz/ambiente-mcave-u22/releases/download/v1.0/ParaView-6.0.1-MPI-Linux-Python3.10-x86_64.tar.gz"
 PV_FILE="ParaView-6.0.1.tar.gz"
 
 if [ ! -d "/opt/paraview6" ]; then
     echo ">>> Baixando ParaView..."
-    wget -O /tmp/$PV_FILE "$FINAL_URL"
+    wget -O /tmp/$PV_FILE "$PV_URL"
     echo ">>> Instalando em /opt/paraview6..."
     sudo mkdir -p /opt/paraview6
     sudo tar -xzf /tmp/$PV_FILE -C /opt/paraview6 --strip-components=1
@@ -245,12 +162,10 @@ if [ ! -d "/opt/paraview6" ]; then
 fi
 
 # ==============================================================================
-# ETAPA 8: CONFIGURAÇÃO .BASHRC
+# ETAPA 6: CONFIGURAÇÃO .BASHRC
 # ==============================================================================
 echo ""
-echo "-----------------------------------------------------------------"
-echo "[8/8] FINALIZANDO CONFIGURAÇÃO DO AMBIENTE..."
-echo "-----------------------------------------------------------------"
+echo "[6/6] FINALIZANDO CONFIGURAÇÃO DO AMBIENTE..."
 
 cp ~/.bashrc ~/.bashrc.backup.$(date +%F_%H-%M)
 sed -i '/# --- MCAVE CONFIG START ---/,/# --- MCAVE CONFIG END ---/d' ~/.bashrc
@@ -278,18 +193,16 @@ alias elmer='ElmerGUI'
 alias mesh='gmsh'
 alias refresh='source ~/.bashrc'
 
-# 5. PARAVIEW 6 (GPU OFFLOADING)
+# 5. PARAVIEW 6 (Standard)
 export PARAVIEW_HOME=/opt/paraview6
 export PATH=$PARAVIEW_HOME/bin:$PATH
 unalias paraview 2>/dev/null
 unalias paraFoam 2>/dev/null
 
 paraview() {
-    echo ">> Iniciando ParaView 6 (RTX 4060)..."
+    # Comando padrão sem flags da NVIDIA (Pode ser ajustado se instalar Drivers)
     env -u LD_LIBRARY_PATH -u PYTHONPATH -u QT_PLUGIN_PATH \
     LC_ALL=C.UTF-8 \
-    __NV_PRIME_RENDER_OFFLOAD=1 \
-    __GLX_VENDOR_LIBRARY_NAME=nvidia \
     /opt/paraview6/bin/paraview "$@" &
 }
 
@@ -303,12 +216,13 @@ EOF
 
 echo ""
 echo "================================================================="
-echo "INSTALAÇÃO COMPLETA!"
+echo "INSTALAÇÃO DOS SOFTWARES CONCLUÍDA!"
 echo "================================================================="
-echo "O sistema precisa ser reiniciado para:"
-echo "1. Carregar o novo Driver NVIDIA 580."
-echo "2. Ativar o DRM Modeset e Autostart de Performance."
+echo "Ambiente configurado:"
+echo "- Teclado: ABNT2"
+echo "- Tema: Dark Mode"
+echo "- Softwares: Elmer, OpenFOAM, ParaView 6, MKL, Gmsh"
 echo ""
-echo "Por favor, reinicie agora com: sudo reboot"
+echo "Para instalar Drivers NVIDIA, consulte o guia separado."
+echo "Reinicie o terminal ou digite: source ~/.bashrc"
 echo "================================================================="
-
