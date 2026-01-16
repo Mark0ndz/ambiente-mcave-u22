@@ -99,11 +99,15 @@ echo ""
 echo "[4/6] COMPILANDO ELMERFEM..."
 
 # Dependências
-sudo apt install -y \
-  libblas-dev liblapack-dev cmake-qt-gui libscalapack-mpi-dev \
-  libqt5xml5 qtbase5-dev qt5-qmake qtdeclarative5-dev qtscript5-dev \
-  libqt5svg5-dev qtcreator libmumps-dev parmetis-doc libparmetis-dev \
-  libmetis-dev libscotch-dev libhypre-dev mpich
+sudo apt update && sudo apt install -y \
+  build-essential git cmake gfortran cmake-qt-gui qtcreator \
+  libopenmpi-dev openmpi-bin mpich \
+  libblas-dev liblapack-dev libscalapack-mpi-dev \
+  libmumps-dev libhypre-dev \
+  libparmetis-dev libmetis-dev libscotch-dev parmetis-doc \
+  qtbase5-dev qt5-qmake qtdeclarative5-dev qtscript5-dev \
+  qttools5-dev libqt5svg5-dev libqt5opengl5-dev libqt5xml5 \
+  libqwt-qt5-dev
 
 # Compilação
 cd $HOME
@@ -226,3 +230,4 @@ echo ""
 echo "Para instalar Drivers NVIDIA, consulte o guia separado."
 echo "Reinicie o terminal ou digite: source ~/.bashrc"
 echo "================================================================="
+
