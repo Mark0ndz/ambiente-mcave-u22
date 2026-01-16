@@ -137,7 +137,7 @@ cmake \
   -DHypre_INCLUDE_DIR=/usr/include/hypre \
   -DCMAKE_INSTALL_PREFIX=../install ../elmerfem
 
-make -j$(nproc) install
+make -j$(nproc) install | tee log.make.install
 
 # ==============================================================================
 # ETAPA 5: OPENFOAM, GMSH E PARAVIEW
@@ -230,4 +230,5 @@ echo ""
 echo "Para instalar Drivers NVIDIA, consulte o guia separado."
 echo "Reinicie o terminal ou digite: source ~/.bashrc"
 echo "================================================================="
+
 
