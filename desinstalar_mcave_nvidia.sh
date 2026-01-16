@@ -72,14 +72,7 @@ sudo apt purge -y \
 sudo apt autoremove -y
 sudo apt clean
 
-# ==============================================================================
-# 6. LIMPANDO .BASHRC
-# ==============================================================================
-echo "[6/6] Restaurando .bashrc..."
-cp ~/.bashrc ~/.bashrc.backup.clean.$(date +%F_%H-%M)
-sed -i '/# --- MCAVE CONFIG START ---/,/# --- MCAVE CONFIG END ---/d' ~/.bashrc
-
 echo ""
 echo "================================================================="
-echo "LIMPEZA CONCLUÍDA!"
+echo "LIMPEZA CONCLUÍDA! Não esqueça de atualizar seu arquivo .bashrc" 
 echo "================================================================="
