@@ -1,0 +1,69 @@
+==============================================================================
+GUIA: INSTALAÇÃO E OTIMIZAÇÃO DE DRIVERS NVIDIA (UBUNTU 22.04)
+Alvo: GPUs NVIDIA (Série RTX recomendada)
+Driver: Versão 580 (Proprietário)
+==============================================================================
+
+PASSO 1: LIMPEZA DE DRIVERS ANTIGOS
+------------------------------------------------------------------------------
+Abra o terminal e execute os comandos abaixo para garantir que não haja conflitos:
+
+sudo apt-get purge 'nvidia.*' -y
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+
+PASSO 2: INSTALAÇÃO DO DRIVER 580
+------------------------------------------------------------------------------
+Adiciona o repositório oficial de gráficos e instala a versão 580:
+
+sudo add-apt-repository ppa:graphics-drivers/ppa -y
+sudo apt update
+sudo apt install -y nvidia-driver-580 nvidia-utils-580 nvidia-settings
+
+PASSO 3: CONFIGURAÇÃO DE PERFORMANCE (PÓS-INSTALAÇÃO)
+------------------------------------------------------------------------------
+3.1. Forçar uso da GPU NVIDIA (Prime Select):
+sudo prime-select nvidia
+
+3.2. Ativar DRM Modeset (Melhora a sincronização e evita tearing):
+echo "options nvidia-drm modeset=1" | sudo tee /etc/modprobe.d/nvidia-kms.conf
+sudo update-initramfs -u
+
+PASSO 4: PERSISTÊNCIA VISUAL (AUTOSTART)
+------------------------------------------------------------------------------
+Cria um script para forçar o modo "Performance Máxima" e corrigir lag visual
+toda vez que você fizer login no sistema.
+
+Copie e cole todo o bloco abaixo no terminal:
+
+mkdir -p ~/.config/autostart
+cat <<EOF > ~/.config/autostart/nvidia-performance.desktop
+[Desktop Entry]
+Type=Application
+Exec=sh -c 'sleep 5 && nvidia-settings -a "[gpu:0]/GpuPowerMizerMode=1" && nvidia-settings -a "CurrentMetaMode=\$(nvidia-settings -q CurrentMetaMode -t | sed "s/\\}/, ForceFullCompositionPipeline=On\\}/g")"'
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=NVIDIA Performance Mode
+Comment=Forca PowerMizer e FullCompositionPipeline no login
+EOF
+
+chmod +x ~/.config/autostart/nvidia-performance.desktop
+
+PASSO 5: ATIVAR OTIMIZAÇÃO NO PARAVIEW (OPCIONAL)
+------------------------------------------------------------------------------
+Se você quiser que o ParaView use explicitamente o "Render Offload" da NVIDIA,
+edite seu arquivo ~/.bashrc:
+
+1. Digite: gedit ~/.bashrc
+2. Procure a função 'paraview()'.
+3. Adicione as linhas abaixo antes do comando /opt/paraview6...:
+
+    __NV_PRIME_RENDER_OFFLOAD=1 \
+    __GLX_VENDOR_LIBRARY_NAME=nvidia \
+
+PASSO 6: REINICIALIZAÇÃO
+------------------------------------------------------------------------------
+Para que tudo tenha efeito, reinicie o computador:
+
+sudo reboot
