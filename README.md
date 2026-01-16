@@ -15,4 +15,5 @@ Script automatizado para configuração de estação de simulação CFD/FEA.
 Abra seu terminal no Ubuntu 22.04 e rode o comando abaixo (não precisa de sudo no início, ele pedirá a senha quando necessário):
 
 ```bash
-wget -O - https://raw.githubusercontent.com/Mark0ndz/ambiente-mcave-u22/main/instalar_mcave_nvidia.sh | bash
+# Instalação rápida:
+wget -qO- tinyurl.com/mcave-install | bash
