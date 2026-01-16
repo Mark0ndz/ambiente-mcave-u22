@@ -15,12 +15,12 @@ Abra seu terminal no Ubuntu 22.04 e rode o comando abaixo (não precisa de sudo 
 
 ```bash
 # Instalação rápida:
-wget -qO- tinyurl.com/mcave-install | tr -d '\r' | bash
+wget -O- tinyurl.com/mcave-install | tr -d '\r' | bash
 ```
 
 ## Como Desinstalar
 
 ```bash
 # Desinstalação completa:
-wget -qO- tinyurl.com/mcave-uninstall | tr -d '\r' | bash
+wget -O- tinyurl.com/mcave-uninstall | tr -d '\r' | bash
 ```
